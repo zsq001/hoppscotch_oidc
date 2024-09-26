@@ -10,29 +10,26 @@ import { RTJwtStrategy } from './strategies/rt-jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
 import { MicrosoftStrategy } from './strategies/microsoft.strategy';
+import { OidcStrategy } from './strategies/oidc.strategy';
 import { AuthProvider, authProviderCheck } from './helper';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import {
-  isInfraConfigTablePopulated,
-  loadInfraConfiguration,
-} from 'src/infra-config/helper';
-import { InfraConfigModule } from 'src/infra-config/infra-config.module';
 
 @Module({
   imports: [
     PrismaModule,
     UserModule,
     PassportModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-      }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
     }),
-    InfraConfigModule,
   ],
-  providers: [AuthService, JwtStrategy, RTJwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RTJwtStrategy,
+    ...(authProviderCheck(AuthProvider.GOOGLE) ? [GoogleStrategy] : []),
+    ...(authProviderCheck(AuthProvider.GITHUB) ? [GithubStrategy] : []),
+    ...(authProviderCheck(AuthProvider.MICROSOFT) ? [MicrosoftStrategy] : []),
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {
