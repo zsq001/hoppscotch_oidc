@@ -65,7 +65,69 @@ const signOut = async (reloadWindow = false) => {
   authEvents$.next({
     event: 'logout',
   });
-};
+}
+
+async function signInUserWithGithubFB() {
+  window.location.href = `${
+    import.meta.env.VITE_BACKEND_API_URL
+  }/auth/github?redirect_uri=${import.meta.env.VITE_ADMIN_URL}`;
+}
+
+async function signInUserWithOidcFB() {
+  window.location.href = `${
+    import.meta.env.VITE_BACKEND_API_URL
+  }/auth/oidc?redirect_uri=${import.meta.env.VITE_ADMIN_URL}`;
+}
+
+async function signInUserWithGoogleFB() {
+  window.location.href = `${
+    import.meta.env.VITE_BACKEND_API_URL
+  }/auth/google?redirect_uri=${import.meta.env.VITE_ADMIN_URL}`;
+}
+
+async function signInUserWithMicrosoftFB() {
+  window.location.href = `${
+    import.meta.env.VITE_BACKEND_API_URL
+  }/auth/microsoft?redirect_uri=${import.meta.env.VITE_ADMIN_URL}`;
+}
+
+async function getInitialUserDetails() {
+  const res = await axios.post<{
+    data?: {
+      me?: {
+        uid: string;
+        displayName: string;
+        email: string;
+        photoURL: string;
+        isAdmin: boolean;
+        createdOn: string;
+        // emailVerified: boolean
+      };
+    };
+    errors?: Array<{
+      message: string;
+    }>;
+  }>(
+    `${import.meta.env.VITE_BACKEND_GQL_URL}`,
+    {
+      query: `query Me {
+      me {
+        uid
+        displayName
+        email
+        photoURL
+        isAdmin
+        createdOn
+      }
+    }`,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      withCredentials: true,
+    }
+  );
 
 const getUserDetails = async () => {
   const res = await authQuery.getUserDetails();
@@ -186,8 +248,13 @@ export const auth = {
       import.meta.env.VITE_BACKEND_API_URL
     }/auth/microsoft?redirect_uri=${import.meta.env.VITE_ADMIN_URL}`;
   },
-
-  signInWithEmailLink: (url: string) => {
+  async signInUserWithOidc() {
+    await signInUserWithOidcFB();
+  },
+  async signInUserWithMicrosoft() {
+    await signInUserWithMicrosoftFB();
+  },
+  async signInWithEmailLink(email: string, url: string) {
     const urlObject = new URL(url);
     const searchParams = new URLSearchParams(urlObject.search);
     const token = searchParams.get('token');
